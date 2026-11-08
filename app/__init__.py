@@ -79,4 +79,14 @@ def create_app(config_name=None):
         db.session.commit()
         print(f"Admin account created: username='{admin_username}', password='{admin_password}'")
 
+    @app.route("/")
+    def root():
+        from flask import redirect, url_for
+        from flask_login import current_user
+        if current_user.is_authenticated:
+            if current_user.role == "admin":
+                return redirect(url_for("admin.dashboard"))
+            return redirect(url_for("dashboard.index"))
+        return redirect(url_for("auth.login"))
+
     return app
