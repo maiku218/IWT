@@ -11,7 +11,7 @@ from flask_login import current_user
 from app import db
 from app.models import WorkLog
 from app.routes.helpers import admin_required, approved_intern_required, get_work_log
-from datetime import datetime, time
+from datetime import datetime
 
 bp = Blueprint("work_logs", __name__, url_prefix="/work-logs")
 
@@ -27,7 +27,7 @@ CATEGORIES = [
 
 STATUSES = ["Completed", "Ongoing", "Pending"]
 
-REQUIRED_FIELDS = ["work_date", "task_title", "description", "category", "status"]
+REQUIRED_FIELDS = ["work_date", "task_title", "description", "skills_acquired", "category", "status"]
 
 
 def validate_work_log_data(data, is_update=False):
@@ -52,29 +52,11 @@ def validate_work_log_data(data, is_update=False):
     if status and status not in STATUSES:
         errors["status"] = "Invalid status selected."
 
-    start_time_str = (data.get("start_time") or "").strip()
-    end_time_str = (data.get("end_time") or "").strip()
-    start_time = None
-    end_time = None
-    if start_time_str:
-        try:
-            start_time = datetime.strptime(start_time_str, "%H:%M").time()
-        except ValueError:
-            errors["start_time"] = "Invalid start time."
-    if end_time_str:
-        try:
-            end_time = datetime.strptime(end_time_str, "%H:%M").time()
-        except ValueError:
-            errors["end_time"] = "Invalid end time."
-    if start_time and end_time and end_time <= start_time:
-        errors["end_time"] = "End time must be after start time."
-
     return errors, {
         "task_title": (data.get("task_title") or "").strip(),
         "description": (data.get("description") or "").strip(),
+        "skills_acquired": (data.get("skills_acquired") or "").strip(),
         "work_date": datetime.strptime(work_date_str, "%Y-%m-%d").date() if work_date_str else None,
-        "start_time": start_time,
-        "end_time": end_time,
         "category": category,
         "status": status,
     }
@@ -146,9 +128,8 @@ def create():
         user_id=current_user.id,
         task_title=values["task_title"],
         description=values["description"],
+        skills_acquired=values["skills_acquired"],
         work_date=values["work_date"],
-        start_time=values["start_time"],
-        end_time=values["end_time"],
         category=values["category"],
         status=values["status"],
     )
@@ -189,9 +170,8 @@ def edit(log_id):
 
     log.task_title = values["task_title"]
     log.description = values["description"]
+    log.skills_acquired = values["skills_acquired"]
     log.work_date = values["work_date"]
-    log.start_time = values["start_time"]
-    log.end_time = values["end_time"]
     log.category = values["category"]
     log.status = values["status"]
     db.session.commit()

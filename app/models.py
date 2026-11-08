@@ -91,9 +91,8 @@ class WorkLog(db.Model):
     )
     task_title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=False)
+    skills_acquired = db.Column(db.Text, nullable=True)
     work_date = db.Column(db.Date, nullable=False, index=True)
-    start_time = db.Column(db.Time, nullable=True)
-    end_time = db.Column(db.Time, nullable=True)
     category = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -111,34 +110,16 @@ class WorkLog(db.Model):
         cascade="all, delete-orphan",
     )
 
-    @property
-    def time_spent(self):
-        if self.start_time and self.end_time:
-            start = datetime.combine(datetime.today(), self.start_time)
-            end = datetime.combine(datetime.today(), self.end_time)
-            delta = end - start
-            total_minutes = int(delta.total_seconds() / 60)
-            if total_minutes <= 0:
-                return "0 min"
-            hours = total_minutes // 60
-            minutes = total_minutes % 60
-            if hours > 0:
-                return f"{hours}h {minutes}m" if minutes else f"{hours}h"
-            return f"{minutes}m"
-        return "Not specified"
-
     def to_dict(self):
         return {
             "id": self.id,
             "user_id": self.user_id,
             "task_title": self.task_title,
             "description": self.description,
+            "skills_acquired": self.skills_acquired,
             "work_date": self.work_date.isoformat() if self.work_date else None,
-            "start_time": self.start_time.strftime("%H:%M") if self.start_time else None,
-            "end_time": self.end_time.strftime("%H:%M") if self.end_time else None,
             "category": self.category,
             "status": self.status,
-            "time_spent": self.time_spent,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

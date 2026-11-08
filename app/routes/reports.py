@@ -70,13 +70,6 @@ def index():
     ongoing_tasks = sum(1 for l in logs if l.status == "Ongoing")
     pending_tasks = sum(1 for l in logs if l.status == "Pending")
 
-    total_hours = 0.0
-    for l in logs:
-        if l.start_time and l.end_time:
-            start = datetime.combine(today, l.start_time)
-            end = datetime.combine(today, l.end_time)
-            total_hours += (end - start).total_seconds() / 3600
-
     # Daily breakdown for chart
     daily = {}
     for l in logs:
@@ -153,8 +146,8 @@ def export_pdf():
     )
     pdf.ln(6)
 
-    headers = ["Date", "Task Title", "Category", "Status", "Start Time", "End Time", "Time Spent", "Description"]
-    widths = [22, 55, 32, 22, 22, 22, 26, 0]
+    headers = ["Date", "Task Title", "Category", "Status", "Description"]
+    widths = [22, 55, 32, 22, 0]
 
     pdf.set_font("Helvetica", "B", 9)
     for i, h in enumerate(headers):
@@ -169,9 +162,6 @@ def export_pdf():
             log.task_title,
             log.category,
             log.status,
-            log.start_time.strftime("%H:%M") if log.start_time else "-",
-            log.end_time.strftime("%H:%M") if log.end_time else "-",
-            log.time_spent,
             (log.description or "")[:60],
         ]
         for i, val in enumerate(row):
@@ -217,7 +207,7 @@ def export_excel():
     ws = wb.active
     ws.title = "Work Logs"
 
-    headers = ["Date", "Task Title", "Category", "Status", "Start Time", "End Time", "Time Spent", "Description", "Created At"]
+    headers = ["Date", "Task Title", "Category", "Status", "Skills Acquired", "Description", "Created At"]
     ws.append(headers)
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -229,9 +219,7 @@ def export_excel():
             log.task_title,
             log.category,
             log.status,
-            log.start_time.strftime("%H:%M") if log.start_time else "-",
-            log.end_time.strftime("%H:%M") if log.end_time else "-",
-            log.time_spent,
+            log.skills_acquired or "",
             log.description or "",
             log.created_at.strftime("%Y-%m-%d %H:%M") if log.created_at else "",
         ])
