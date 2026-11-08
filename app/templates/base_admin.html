@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block sidebar %}
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-text">Admin Panel</span>
+    </div>
+    <ul class="sidebar-nav">
+        {% set ep = request.endpoint or '' %}
+        <li><a class="nav-item {% if ep == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><span class="icon">🛡</span> <span class="text">Dashboard</span></a></li>
+        <li><a class="nav-item {% if ep == 'admin.approvals' %}active{% endif %}" href="{{ url_for('admin.approvals') }}"><span class="icon">⏳</span> <span class="text">Pending Approvals</span></a></li>
+        <li><a class="nav-item {% if ep == 'admin.interns' %}active{% endif %}" href="{{ url_for('admin.interns') }}"><span class="icon">👥</span> <span class="text">Intern Management</span></a></li>
+        <li><a class="nav-item {% if ep == 'admin.reports' %}active{% endif %}" href="{{ url_for('admin.reports') }}"><span class="icon">📋</span> <span class="text">All Work Logs</span></a></li>
+        <li><a class="nav-item {% if ep == 'admin.reports' %}active{% endif %}" href="{{ url_for('admin.reports') }}"><span class="icon">📊</span> <span class="text">Reports</span></a></li>
+        <li><a class="nav-item {% if ep == 'admin.settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}"><span class="icon">⚙</span> <span class="text">Settings</span></a></li>
+        <li><hr class="sidebar-divider"></li>
+        <li><a class="nav-item text-danger" href="{{ url_for('admin.logout') }}"><span class="icon">🚪</span> <span class="text">Logout</span></a></li>
+    </ul>
+</div>
+{% endblock %}

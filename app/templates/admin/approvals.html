@@ -1,0 +1,142 @@
+{% extends "base_admin.html" %}
+{% block title %}Pending Approvals{% endblock %}
+{% block page_title %}Pending Approvals{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">Pending Approvals</h5>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive p-3">
+        {% if pending %}
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Applicant Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Registration Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for u in pending %}
+            <tr>
+                <td>{{ u.full_name }}</td>
+                <td>{{ u.username }}</td>
+                <td>{{ u.email }}</td>
+                <td>{{ u.registered_at.strftime('%b %d, %Y %H:%M') if u.registered_at else 'N/A' }}</td>
+                <td><span class="badge status-badge status-pending">Pending</span></td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-sm btn-outline-primary view-details" data-id="{{ u.id }}" data-name="{{ u.full_name | e }}" data-username="{{ u.username }}" data-email="{{ u.email }}" title="View Details"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                        <button class="btn btn-sm btn-success approve-btn" data-id="{{ u.id }}" data-name="{{ u.full_name | e }}" title="Approve"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg></button>
+                        <button class="btn btn-sm btn-danger reject-btn" data-id="{{ u.id }}" data-name="{{ u.full_name | e }}" title="Reject"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-muted text-center py-3">No pending approvals.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if rejected %}
+<div class="card mt-3">
+    <div class="card-body p-3">
+        <h6 class="m-0 mb-2">Rejected Applications</h6>
+        <table class="table table-sm align-middle mb-0">
+            <thead>
+                <tr><th>Name</th><th>Username</th><th>Rejected</th><th>Reason</th></tr>
+            </thead>
+            <tbody>
+            {% for u in rejected %}
+            <tr>
+                <td>{{ u.full_name }}</td>
+                <td>{{ u.username }}</td>
+                <td class="text-muted small">{{ u.rejected_at.strftime('%b %d, %Y') if u.rejected_at else 'N/A' }}</td>
+                <td class="text-muted small">{{ u.rejection_reason }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Reject reason modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Reject Application</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="rejectForm">
+                <input type="hidden" id="rejectUserId">
+                <div class="modal-body">
+                    <p class="mb-3">Reject application for <strong id="rejectName"></strong>?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Rejection Reason</label>
+                        <textarea name="reason" id="rejectReason" class="form-control" rows="3" required placeholder="Explain why this application was rejected"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Reject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const rejectModal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    let rejectUserId = null;
+
+    document.querySelectorAll('.approve-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (!confirm('Approve "' + this.dataset.name + '"?')) return;
+            fetch('/admin/approvals/' + this.dataset.id + '/approve', { method: 'POST' })
+                .then(async r => {
+                    if (!r.ok) return alert((await r.json()).error || 'Failed to approve.');
+                    location.reload();
+                });
+        });
+    });
+
+    document.querySelectorAll('.reject-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            rejectUserId = this.dataset.id;
+            document.getElementById('rejectName').textContent = this.dataset.name;
+            document.getElementById('rejectForm').reset();
+            rejectModal.show();
+        });
+    });
+
+    document.getElementById('rejectForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch('/admin/approvals/' + rejectUserId + '/reject', { method: 'POST', body: fd })
+            .then(async r => {
+                if (!r.ok) return alert((await r.json()).error || 'Failed to reject.');
+                rejectModal.hide();
+                location.reload();
+            });
+    });
+
+    document.querySelectorAll('.view-details').forEach(btn => {
+        btn.addEventListener('click', function () {
+            alert('Name: ' + this.dataset.name + '\nUsername: ' + this.dataset.username + '\nEmail: ' + this.dataset.email);
+        });
+    });
+});
+</script>
+{% endblock %}

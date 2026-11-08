@@ -9,13 +9,14 @@ from flask import (
     send_file,
     current_app,
 )
-from flask_login import login_required, current_user
+from flask_login import current_user
 from sqlalchemy import func, extract
 from datetime import date, datetime, timedelta
 import io
 
 from app import db
 from app.models import WorkLog
+from app.routes.helpers import approved_intern_required
 
 bp = Blueprint("reports", __name__, url_prefix="/reports")
 
@@ -50,7 +51,7 @@ def _base_query(start_date, end_date):
 
 
 @bp.route("/")
-@login_required
+@approved_intern_required
 def index():
     today = date.today()
     default_start = today.replace(day=1)
@@ -112,7 +113,7 @@ def index():
 
 
 @bp.route("/export/pdf")
-@login_required
+@approved_intern_required
 def export_pdf():
     start_date = _parse_date(request.args.get("start_date"), date.today().replace(day=1))
     end_date = _parse_date(request.args.get("end_date"), date.today())
@@ -196,7 +197,7 @@ def export_pdf():
 
 
 @bp.route("/export/excel")
-@login_required
+@approved_intern_required
 def export_excel():
     start_date = _parse_date(request.args.get("start_date"), date.today().replace(day=1))
     end_date = _parse_date(request.args.get("end_date"), date.today())

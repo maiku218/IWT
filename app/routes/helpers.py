@@ -15,6 +15,18 @@ def admin_required(f):
     return decorated
 
 
+def approved_intern_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not current_user.is_authenticated:
+            abort(403)
+        if current_user.role != "intern" or not current_user.is_approved():
+            abort(403)
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 def get_work_log(log_id):
     log = db_get(WorkLog, log_id)
     if not log:
@@ -29,4 +41,4 @@ def db_get(model, record_id):
     return db.session.get(model, int(record_id))
 
 
-__all__ = ["admin_required", "get_work_log", "db_get"]
+__all__ = ["admin_required", "approved_intern_required", "get_work_log", "db_get"]

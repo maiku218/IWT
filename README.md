@@ -5,6 +5,11 @@ A minimalist, full-stack web application where interns record daily work activit
 ## Features
 
 - Secure login/logout with hashed passwords (Werkzeug)
+- **Separate administrator login** (`/admin/login`) and **intern login** (`/login`)
+- Public intern registration (`/register`) with administrator approval workflow
+- New accounts are created `pending` and cannot access intern features until approved
+- Administrator approves or rejects pending intern accounts (`/admin/approvals`)
+- Administrator dashboard (`/admin/dashboard`) with intern stats and recent registrations
 - Individual intern accounts with private work records
 - Admin role: create/manage interns, view all logs, reset passwords
 - Large interactive monthly calendar (FullCalendar) showing task counts per day
@@ -14,6 +19,8 @@ A minimalist, full-stack web application where interns record daily work activit
 - Productivity reports (daily/weekly/monthly) with Chart.js visualizations
 - Export reports to PDF and Excel
 - User settings: update profile and change password
+- Account status: pending, approved, rejected, suspended
+- Audit log for administrator actions
 - Minimalist, responsive design (desktop, tablet, mobile)
 
 ## Tech Stack
@@ -88,7 +95,16 @@ Copy `.env.example` to `.env` and adjust values:
 copy .env.example .env
 ```
 
-Edit `.env` to set your `SECRET_KEY` and `DATABASE_URL`.
+Edit `.env` to set your `SECRET_KEY`, `DATABASE_URL`, and admin credentials:
+
+```ini
+SECRET_KEY=change-me-to-a-long-random-secret-key
+DATABASE_URL=postgresql+psycopg2://intern_app:intern_app_pass@localhost:5432/intern_tracker
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=Admin123!
+```
+
+(`ADMIN_USERNAME` / `ADMIN_PASSWORD` are used by `flask seed-db` to create the initial administrator. **Change these in production.**)
 
 ### 5. Initialize the database
 ```powershell
@@ -119,6 +135,18 @@ python run.py
 Open http://127.0.0.1:5000 in your browser.
 
 Login with the admin account, then create intern accounts via Admin Dashboard > Intern Management. Interns log in with their own credentials.
+
+### User Flow
+
+**Public registration → approval → login:**
+1. Applicant opens `http://127.0.0.1:5000/register` and registers.
+2. Account is created with status `pending`; applicant is redirected to `/account/pending`.
+3. Administrator logs in at `/admin/login`, reviews pending accounts at `/admin/approvals`, and clicks Approve or Reject.
+4. Once approved, the intern logs in at `/login` and accesses the Intern Dashboard.
+
+**Key endpoints:**
+- Intern: `/login`, `/logout`, `/register`, `/account/pending`, `/account/status`, `/dashboard`, `/work-logs`, `/reports`, `/settings`
+- Administrator: `/admin/login`, `/admin/logout`, `/admin/dashboard`, `/admin/approvals`, `/admin/approvals/<id>/approve`, `/admin/approvals/<id>/reject`, `/admin/interns`, `/admin/interns/<id>`, `/admin/reports`, `/admin/settings`
 
 ## Available CLI Commands
 

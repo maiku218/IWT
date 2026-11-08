@@ -5,25 +5,26 @@ from flask import (
     request,
     current_app,
 )
-from flask_login import login_required, current_user
+from flask_login import current_user
 from sqlalchemy import func, extract
 from datetime import date, datetime
 
 from app import db
 from app.models import User, WorkLog
+from app.routes.helpers import approved_intern_required
 
 bp = Blueprint("dashboard", __name__, url_prefix="/dashboard")
 
 
 @bp.route("/")
-@login_required
+@approved_intern_required
 def index():
     today = date.today().isoformat()
     return render_template("dashboard/index.html", today=today)
 
 
 @bp.route("/api/stats")
-@login_required
+@approved_intern_required
 def stats():
     user_id = current_user.id
     base = WorkLog.query.filter_by(user_id=user_id)
@@ -47,7 +48,7 @@ def stats():
 
 
 @bp.route("/api/calendar-events")
-@login_required
+@approved_intern_required
 def calendar_events():
     start = request.args.get("start")
     end = request.args.get("end")
@@ -80,7 +81,7 @@ def calendar_events():
 
 
 @bp.route("/api/records")
-@login_required
+@approved_intern_required
 def records():
     date_str = request.args.get("date")
     if not date_str:

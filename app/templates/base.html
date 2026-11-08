@@ -23,16 +23,17 @@
                 <h1 class="page-title m-0">{% block page_title %}Dashboard{% endblock %}</h1>
                 <div class="d-flex align-items-center gap-3">
                     <span class="user-name d-none d-sm-inline">{{ current_user.full_name }}</span>
-                    <span class="badge bg-soft-blue text-dark">{{ current_user.role }}</span>
+                    <span class="badge bg-soft-{{ 'blue' if current_user.role == 'admin' else 'gray' }} text-dark">{{ current_user.role }}</span>
                     <div class="dropdown">
                         <button class="btn btn-link text-dark p-0 dropdown-toggle d-flex align-items-center gap-2" id="userMenu" data-bs-toggle="dropdown">
                             <span class="user-avatar">{{ current_user.full_name[0] }}</span>
                             <span class="caret-text d-none d-sm-inline">Menu</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="{{ url_for('settings.index') }}">Settings</a></li>
                             {% if current_user.role == 'admin' %}
-                            <li><a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('admin.settings') }}">Admin Settings</a></li>
+                            {% else %}
+                            <li><a class="dropdown-item" href="{{ url_for('settings.index') }}">Settings</a></li>
                             {% endif %}
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">Logout</a></li>
@@ -43,25 +44,26 @@
         </div>
     </nav>
 
+    {% block sidebar %}
     <div class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <span class="brand-text">Work Tracker</span>
         </div>
         <ul class="sidebar-nav">
-            <li><a class="nav-item {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}"><span class="icon">📅</span> <span class="text">Dashboard</span></a></li>
-            <li><a class="nav-item {% if request.endpoint.startswith('work_logs') %}active{% endif %}" href="{{ url_for('work_logs.index') }}"><span class="icon">📝</span> <span class="text">My Work Logs</span></a></li>
-            <li><a class="nav-item {% if request.endpoint.startswith('reports') %}active{% endif %}" href="{{ url_for('reports.index') }}"><span class="icon">📊</span> <span class="text">Reports</span></a></li>
-            <li><a class="nav-item {% if request.endpoint.startswith('settings') %}active{% endif %}" href="{{ url_for('settings.index') }}"><span class="icon">⚙</span> <span class="text">Settings</span></a></li>
+            {% set ep = request.endpoint or '' %}
+            <li><a class="nav-item {% if ep == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}"><span class="icon">📅</span> <span class="text">Dashboard</span></a></li>
+            <li><a class="nav-item {% if ep.startswith('work_logs') %}active{% endif %}" href="{{ url_for('work_logs.index') }}"><span class="icon">📝</span> <span class="text">My Work Logs</span></a></li>
+            <li><a class="nav-item {% if ep.startswith('reports') %}active{% endif %}" href="{{ url_for('reports.index') }}"><span class="icon">📊</span> <span class="text">Reports</span></a></li>
+            <li><a class="nav-item {% if ep.startswith('settings') %}active{% endif %}" href="{{ url_for('settings.index') }}"><span class="icon">⚙</span> <span class="text">Settings</span></a></li>
             {% if current_user.role == 'admin' %}
             <li><hr class="sidebar-divider"></li>
-            <li><a class="nav-item {% if request.endpoint.startswith('admin') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><span class="icon">🛡</span> <span class="text">Admin Dashboard</span></a></li>
-            <li><a class="nav-item" href="{{ url_for('admin.interns') }}"><span class="icon">👥</span> <span class="text">Intern Management</span></a></li>
-            <li><a class="nav-item" href="{{ url_for('admin.logs') }}"><span class="icon">📋</span> <span class="text">All Work Logs</span></a></li>
+            <li><a class="nav-item {% if ep.startswith('admin') %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><span class="icon">🛡</span> <span class="text">Admin Panel</span></a></li>
             {% endif %}
             <li><hr class="sidebar-divider"></li>
             <li><a class="nav-item text-danger" href="{{ url_for('auth.logout') }}"><span class="icon">🚪</span> <span class="text">Logout</span></a></li>
         </ul>
     </div>
+    {% endblock %}
 
     <div class="overlay" id="sidebarOverlay"></div>
 
@@ -83,11 +85,11 @@
             {% block content %}{% endblock %}
         </div>
     </div>
+    {% endif %}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.5/main.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
-{% endif %}
 </body>
 </html>

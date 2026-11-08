@@ -72,6 +72,7 @@ def create_app(config_name=None):
             username=admin_username,
             email="admin@example.com",
             role="admin",
+            account_status="approved",
             is_active=True,
         )
         admin.set_password(admin_password)

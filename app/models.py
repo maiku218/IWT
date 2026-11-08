@@ -13,14 +13,35 @@ class User(db.Model, UserMixin):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="intern")
+    account_status = db.Column(
+        db.String(20), nullable=False, default="pending"
+    )
+    registered_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    approved_at = db.Column(db.DateTime, nullable=True)
+    approved_by = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    rejected_at = db.Column(db.DateTime, nullable=True)
+    rejection_reason = db.Column(db.Text, nullable=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
+    approver = db.relationship(
+        "User", remote_side=[id], foreign_keys=[approved_by], backref="approved_accounts"
+    )
     work_logs = db.relationship(
         "WorkLog",
         backref="owner",
         lazy=True,
         cascade="all, delete-orphan",
+    )
+    audit_logs = db.relationship(
+        "AuditLog",
+        backref="actor",
+        lazy=True,
+        foreign_keys="AuditLog.actor_id",
     )
 
     def set_password(self, password):
@@ -34,6 +55,25 @@ class User(db.Model, UserMixin):
 
     def is_intern(self):
         return self.role == "intern"
+
+    def is_pending(self):
+        return self.account_status == "pending"
+
+    def is_approved(self):
+        return self.account_status == "approved"
+
+    def is_rejected(self):
+        return self.account_status == "rejected"
+
+    def is_suspended(self):
+        return self.account_status == "suspended"
+
+    def can_intern_login(self):
+        return (
+            self.is_active
+            and self.is_intern()
+            and self.is_approved()
+        )
 
     def __repr__(self):
         return f"<User {self.username}>"
@@ -123,3 +163,23 @@ class Attachment(db.Model):
 
     def __repr__(self):
         return f"<Attachment {self.file_name}>"
+
+
+class AuditLog(db.Model):
+    __tablename__ = "audit_logs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    actor_id = db.Column(
+        db.Integer,
+        db.ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    action = db.Column(db.String(50), nullable=False)
+    target_type = db.Column(db.String(50), nullable=True)
+    target_id = db.Column(db.Integer, nullable=True)
+    details = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<AuditLog {self.action}>"

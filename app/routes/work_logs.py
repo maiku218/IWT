@@ -7,10 +7,10 @@ from flask import (
     flash,
     jsonify,
 )
-from flask_login import login_required, current_user
+from flask_login import current_user
 from app import db
 from app.models import WorkLog
-from app.routes.helpers import admin_required, get_work_log
+from app.routes.helpers import admin_required, approved_intern_required, get_work_log
 from datetime import datetime, time
 
 bp = Blueprint("work_logs", __name__, url_prefix="/work-logs")
@@ -81,7 +81,7 @@ def validate_work_log_data(data, is_update=False):
 
 
 @bp.route("/")
-@login_required
+@approved_intern_required
 def index():
     page = request.args.get("page", 1, type=int)
     search = (request.args.get("search") or "").strip()
@@ -130,7 +130,7 @@ def index():
 
 
 @bp.route("/", methods=["POST"])
-@login_required
+@approved_intern_required
 def create():
     data = request.form.to_dict()
     errors, values = validate_work_log_data(data)
@@ -163,14 +163,14 @@ def create():
 
 
 @bp.route("/<int:log_id>")
-@login_required
+@approved_intern_required
 def view(log_id):
     log = get_work_log(log_id)
     return jsonify({"log": log.to_dict()})
 
 
 @bp.route("/<int:log_id>/edit", methods=["GET", "POST"])
-@login_required
+@approved_intern_required
 def edit(log_id):
     log = get_work_log(log_id)
 
@@ -204,7 +204,7 @@ def edit(log_id):
 
 
 @bp.route("/<int:log_id>/delete", methods=["POST"])
-@login_required
+@approved_intern_required
 def delete(log_id):
     log = get_work_log(log_id)
     title = log.task_title
@@ -219,7 +219,7 @@ def delete(log_id):
 
 
 @bp.route("/<int:log_id>/status", methods=["POST"])
-@login_required
+@approved_intern_required
 def update_status(log_id):
     log = get_work_log(log_id)
     status = (request.form.get("status") or request.json.get("status") if request.is_json else None) or ""

@@ -7,22 +7,23 @@ from flask import (
     flash,
     jsonify,
 )
-from flask_login import login_required, current_user
+from flask_login import current_user
 
 from app import db
 from app.models import User
+from app.routes.helpers import approved_intern_required
 
 bp = Blueprint("settings", __name__, url_prefix="/settings")
 
 
 @bp.route("/")
-@login_required
+@approved_intern_required
 def index():
     return render_template("settings/index.html")
 
 
 @bp.route("/", methods=["POST"])
-@login_required
+@approved_intern_required
 def update_profile():
     full_name = (request.form.get("full_name") or "").strip()
     username = (request.form.get("username") or "").strip()
@@ -61,7 +62,7 @@ def update_profile():
 
 
 @bp.route("/change-password", methods=["POST"])
-@login_required
+@approved_intern_required
 def change_password():
     current_password = request.form.get("current_password") or ""
     new_password = request.form.get("new_password") or ""
