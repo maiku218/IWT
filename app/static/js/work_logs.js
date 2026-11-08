@@ -39,7 +39,7 @@ function viewLog(id) {
                 '<div class="row g-2 small"><div class="col-6"><strong>Date:</strong> ' + log.work_date + '</div>' +
                 '<div class="col-6"><strong>Category:</strong> ' + escapeHtml(log.category) + '</div>' +
                 '<div class="col-6"><strong>Status:</strong> <span class="badge status-badge status-' + (log.status || '').toLowerCase() + '">' + escapeHtml(log.status) + '</span></div>' +
-                '<div class="col-6"><strong>Time Spent:</strong> ' + escapeHtml(log.time_spent) + '</div>' +
+                '<div class="col-12"><strong>Skills Acquired:</strong> ' + escapeHtml(log.skills_acquired) + '</div>' +
                 '<div class="col-12"><strong>Description:</strong> ' + escapeHtml(log.description) + '</div>' +
                 '</div></div>';
             showInfoModal('Work Log Details', html);
@@ -58,8 +58,7 @@ function editLog(id) {
             document.getElementById('wlTaskTitle').value = log.task_title;
             document.getElementById('wlCategory').value = log.category;
             document.getElementById('wlStatus').value = log.status;
-            document.getElementById('wlStartTime').value = log.start_time || '';
-            document.getElementById('wlEndTime').value = log.end_time || '';
+            document.getElementById('wlSkillsAcquired').value = log.skills_acquired || '';
             document.getElementById('wlDescription').value = log.description;
             document.getElementById('formErrors').classList.add('d-none');
             new bootstrap.Modal(document.getElementById('workLogModal')).show();

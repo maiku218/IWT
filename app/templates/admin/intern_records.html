@@ -20,19 +20,17 @@
                     <th>Task Title</th>
                     <th>Category</th>
                     <th>Status</th>
-                    <th>Time Spent</th>
                     <th>Created</th>
                 </tr>
             </thead>
             <tbody>
             {% for log in logs.items %}
             <tr>
-                <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
-                <td>{{ log.task_title }}</td>
-                <td><span class="badge category-badge">{{ log.category }}</span></td>
-                <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
-                <td>{{ log.time_spent }}</td>
-                <td class="text-muted small">{{ log.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+                    <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ log.task_title }}</td>
+                    <td><span class="badge category-badge">{{ log.category }}</span></td>
+                    <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                    <td class="text-muted small">{{ log.created_at.strftime('%b %d, %Y %H:%M') }}</td>
             </tr>
             {% endfor %}
             </tbody>
