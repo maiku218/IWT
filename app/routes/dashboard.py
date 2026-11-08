@@ -55,9 +55,11 @@ def calendar_events():
 
     query = WorkLog.query.filter_by(user_id=current_user.id)
     if start:
-        query = query.filter(WorkLog.work_date >= datetime.strptime(start, "%Y-%m-%d").date())
+        start_date = start.split("T")[0]
+        query = query.filter(WorkLog.work_date >= datetime.strptime(start_date, "%Y-%m-%d").date())
     if end:
-        query = query.filter(WorkLog.work_date <= datetime.strptime(end, "%Y-%m-%d").date())
+        end_date = end.split("T")[0]
+        query = query.filter(WorkLog.work_date <= datetime.strptime(end_date, "%Y-%m-%d").date())
 
     logs = query.all()
     events = []
