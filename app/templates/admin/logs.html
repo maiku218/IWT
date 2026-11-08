@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}All Work Logs{% endblock %}
+{% block page_title %}All Work Logs{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">All Work Logs</h5>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3 align-items-end filter-form">
+    <div class="col-sm-3 col-md-2">
+        <select name="intern" class="form-select form-select-sm">
+            <option value="">All Interns</option>
+            {% for u in interns %}
+            <option value="{{ u.id }}" {% if intern_id == u.id %}selected{% endif %}>{{ u.full_name }} ({{ u.username }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-3 col-md-2">
+        <select name="category" class="form-select form-select-sm">
+            <option value="">All Categories</option>
+            {% for c in categories %}
+            <option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-sm-3 col-md-2">
+        <select name="status" class="form-select form-select-sm">
+            <option value="">All Statuses</option>
+            {% for s in statuses %}
+            <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+    </div>
+    <div class="col-md-2">
+        <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+    </div>
+    <div class="col-auto d-grid">
+        <button class="btn btn-primary btn-sm w-100">Filter</button>
+    </div>
+    <a href="{{ url_for('admin.logs') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive p-3">
+        {% if logs %}
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Intern</th>
+                    <th>Date</th>
+                    <th>Task Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Time Spent</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.owner.full_name }} <span class="text-muted small d-block">{{ log.owner.username }}</span></td>
+                <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ log.task_title }}</td>
+                <td><span class="badge category-badge">{{ log.category }}</span></td>
+                <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                <td>{{ log.time_spent }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-muted text-center py-3">No work logs found.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if logs %}
+<div class="d-flex justify-content-between align-items-center mt-2">
+    <span class="text-muted small">Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong> ({{ pagination.total }} records)</span>
+    <div class="pagination-controls">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.logs', page=pagination.prev_num, intern=intern_id, category=category, status=status, date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-secondary">Previous</a>
+        {% endif %}
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.logs', page=pagination.next_num, intern=intern_id, category=category, status=status, date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-secondary">Next</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% endblock %}

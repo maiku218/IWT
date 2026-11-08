@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Intern Records{% endblock %}
+{% block page_title %}{{ intern.full_name }} - Records{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+        <h5 class="m-0">Records for {{ intern.full_name }}</h5>
+        <p class="text-muted small m-0">{{ intern.username }} &middot; {{ intern.email }}</p>
+    </div>
+    <a href="{{ url_for('admin.interns') }}" class="btn btn-outline-secondary btn-sm">Back to Interns</a>
+</div>
+
+<div class="card">
+    <div class="table-responsive p-3">
+        {% if logs.items %}
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Task Title</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Time Spent</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for log in logs.items %}
+            <tr>
+                <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ log.task_title }}</td>
+                <td><span class="badge category-badge">{{ log.category }}</span></td>
+                <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                <td>{{ log.time_spent }}</td>
+                <td class="text-muted small">{{ log.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-muted text-center py-3">No work records for this intern.</div>
+        {% endif %}
+    </div>
+</div>
+
+{% if logs.items %}
+<div class="d-flex justify-content-between align-items-center mt-2">
+    <span class="text-muted small">Page <strong>{{ logs.page }}</strong> of <strong>{{ logs.pages }}</strong></span>
+    <div class="pagination-controls">
+        {% if logs.has_prev %}
+        <a href="{{ url_for('admin.intern_records', user_id=intern.id, page=logs.prev_num) }}" class="btn btn-sm btn-outline-secondary">Previous</a>
+        {% endif %}
+        {% if logs.has_next %}
+        <a href="{{ url_for('admin.intern_records', user_id=intern.id, page=logs.next_num) }}" class="btn btn-sm btn-outline-secondary">Next</a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% endblock %}

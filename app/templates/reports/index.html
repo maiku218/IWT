@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">Reports</h5>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('reports.export_pdf', start_date=start_date, end_date=end_date) }}" class="btn btn-outline-secondary btn-sm">Export PDF</a>
+        <a href="{{ url_for('reports.export_excel', start_date=start_date, end_date=end_date) }}" class="btn btn-outline-secondary btn-sm">Export Excel</a>
+    </div>
+</div>
+
+<form method="GET" class="row g-2 mb-3 align-items-end filter-form">
+    <div class="col-md-3">
+        <label class="form-label small">From Date</label>
+        <input type="date" name="start_date" class="form-control form-control-sm" value="{{ start_date }}">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label small">To Date</label>
+        <input type="date" name="end_date" class="form-control form-control-sm" value="{{ end_date }}">
+    </div>
+    <div class="col-auto d-grid">
+        <button class="btn btn-primary btn-sm w-100">Apply</button>
+    </div>
+    <a href="{{ url_for('reports.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+</form>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Total Tasks</div>
+            <div class="stat-value">{{ total_tasks }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-completed">
+            <div class="stat-label">Completed</div>
+            <div class="stat-value">{{ completed_tasks }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Ongoing</div>
+            <div class="stat-value">{{ ongoing_tasks }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value">{{ pending_tasks }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Total Hours</div>
+            <div class="stat-value">{{ total_hours }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="m-0">Daily Accomplishments</h6></div>
+            <div class="card-body p-3">
+                <canvas id="dailyChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header"><h6 class="m-0">Tasks by Category</h6></div>
+            <div class="card-body p-3">
+                <canvas id="categoryChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-body p-3">
+        <h6 class="m-0 mb-2">Recent Records</h6>
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr><th>Date</th><th>Task Title</th><th>Category</th><th>Status</th><th>Time Spent</th></tr>
+                </thead>
+                <tbody>
+                {% for log in logs[:20] %}
+                <tr>
+                    <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ log.task_title }}</td>
+                    <td><span class="badge category-badge">{{ log.category }}</span></td>
+                    <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                    <td>{{ log.time_spent }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-muted small text-center py-3">No records in this period.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const dailyData = {{ daily_sorted | tojson | safe }};
+    const categoryData = {{ category_counts | tojson | safe }};
+    const statusData = {{ status_counts | tojson | safe }};
+
+    new Chart(document.getElementById('dailyChart'), {
+        type: 'bar',
+        data: {
+            labels: dailyData.map(d => d[0]),
+            datasets: [{ label: 'Tasks', data: dailyData.map(d => d[1]), backgroundColor: '#2563eb' }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(categoryData),
+            datasets: [{ data: Object.values(categoryData), backgroundColor: ['#2563eb','#dc2626','#059669','#7c3aed','#d97706','#0891b2','#6b7280'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+    });
+});
+</script>
+{% endblock %}

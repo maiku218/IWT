@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+    <div class="col-md-4 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Total Tasks</div>
+            <div class="stat-value" id="stat-total">-</div>
+        </div>
+    </div>
+    <div class="col-md-4 col-sm-6">
+        <div class="stat-card stat-completed">
+            <div class="stat-label">Completed Tasks</div>
+            <div class="stat-value" id="stat-completed">-</div>
+        </div>
+    </div>
+    <div class="col-md-4 col-sm-6">
+        <div class="stat-card stat-month">
+            <div class="stat-label">Tasks This Month</div>
+            <div class="stat-value" id="stat-month">-</div>
+        </div>
+    </div>
+</div>
+
+<div class="card calendar-card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title m-0">Monthly Calendar</h5>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" id="btnToday">Today</button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<div class="card mt-3" id="recordsCard" style="display:none;">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h5 class="card-title m-0">Records for <span id="recordsDate"></span></h5>
+        <button class="btn btn-sm btn-primary" id="btnAddFromDate">+ Add Work Log</button>
+    </div>
+    <div class="card-body p-0" id="recordsBody">
+    </div>
+</div>
+
+<!-- Add work log modal -->
+<div class="modal fade" id="workLogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalTitle">Add Work Log</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="workLogForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" id="logId" name="log_id">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Work Date</label>
+                            <input type="date" name="work_date" id="wlWorkDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Task Title</label>
+                            <input type="text" name="task_title" id="wlTaskTitle" class="form-control" required maxlength="200">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Category</label>
+                            <select name="category" id="wlCategory" class="form-select" required>
+                                <option value="">Select category</option>
+                                <option>Technical Support</option>
+                                <option>Troubleshooting</option>
+                                <option>Documentation</option>
+                                <option>Research</option>
+                                <option>Administrative Work</option>
+                                <option>Software Development</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select name="status" id="wlStatus" class="form-select" required>
+                                <option value="">Select status</option>
+                                <option>Completed</option>
+                                <option>Ongoing</option>
+                                <option>Pending</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Start Time</label>
+                            <input type="time" name="start_time" id="wlStartTime" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">End Time</label>
+                            <input type="time" name="end_time" id="wlEndTime" class="form-control">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Work Description</label>
+                            <textarea name="description" id="wlDescription" class="form-control" rows="3" required></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Attachment (optional)</label>
+                            <input type="file" name="attachment" id="wlAttachment" class="form-control" accept=".png,.jpg,.jpeg,.gif,.pdf">
+                            <div class="form-text">Allowed: PNG, JPG, GIF, PDF (max 16 MB)</div>
+                        </div>
+                    </div>
+                    <div id="formErrors" class="alert alert-danger d-none mt-2"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="wlSaveBtn">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+<script src="{{ url_for('static', filename='js/work_logs.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    initCalendar();
+    initWorkLogForm();
+    loadStats();
+});
+</script>
+{% endblock %}

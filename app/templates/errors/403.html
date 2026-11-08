@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Forbidden{% endblock %}
+{% block page_title %}Forbidden{% endblock %}
+{% block content %}
+<div class="empty-state py-5 text-center">
+    <div class="icon">🔒</div>
+    <h2>Access Denied</h2>
+    <p class="text-muted">You do not have permission to access this page.</p>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-primary">Back to Dashboard</a>
+</div>
+{% endblock %}

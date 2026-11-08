@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Registered Interns</div>
+            <div class="stat-value">{{ total_interns }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">Total Work Logs</div>
+            <div class="stat-value">{{ total_logs }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-completed">
+            <div class="stat-label">Completed Tasks</div>
+            <div class="stat-value">{{ completed_tasks }}</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-label">All Users</div>
+            <div class="stat-value">{{ total_users }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0">Recent Work Activities</h6>
+                <a href="{{ url_for('admin.logs') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="table-responsive p-3">
+                {% if recent %}
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr><th>Intern</th><th>Task Title</th><th>Date</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for log in recent %}
+                    <tr>
+                        <td>{{ log.owner.full_name }} ({{ log.owner.username }})</td>
+                        <td>{{ log.task_title }}</td>
+                        <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                        <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-muted text-center py-3">No recent activities.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><h6 class="m-0">Quick Actions</h6></div>
+            <div class="list-group list-group-flush">
+                <a href="{{ url_for('admin.interns') }}" class="list-group-item list-group-item-action">Manage Interns</a>
+                <a href="{{ url_for('admin.logs') }}" class="list-group-item list-group-item-action">View All Work Logs</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}{% endblock %}

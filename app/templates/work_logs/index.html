@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}My Work Logs{% endblock %}
+{% block page_title %}My Work Logs{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">My Work Logs</h5>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#workLogModal">+ Add Work Log</button>
+</div>
+
+<div class="card">
+    <div class="card-body p-3">
+        <form method="GET" class="row g-2 mb-3 align-items-end filter-form">
+            <div class="col-sm-3 col-md-2">
+                <input type="search" name="search" class="form-control form-control-sm" placeholder="Search title or description" value="{{ search }}">
+            </div>
+            <div class="col-sm-3 col-md-2">
+                <select name="category" class="form-select form-select-sm">
+                    <option value="">All Categories</option>
+                    {% for c in categories %}
+                    <option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-3 col-md-2">
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">All Statuses</option>
+                    {% for s in statuses %}
+                    <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-md-2">
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-auto d-grid">
+                <button class="btn btn-primary btn-sm w-100">Filter</button>
+            </div>
+            <a href="{{ url_for('work_logs.index') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        </form>
+
+        {% if logs %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th style="width:12%;">Date</th>
+                        <th>Task Title</th>
+                        <th style="width:16%;">Category</th>
+                        <th style="width:14%;">Time Spent</th>
+                        <th style="width:12%;">Status</th>
+                        <th style="width:18%;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ log.task_title }}</td>
+                    <td><span class="badge category-badge">{{ log.category }}</span></td>
+                    <td>{{ log.time_spent }}</td>
+                    <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-primary view-log" data-id="{{ log.id }}" title="View"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+                            <button class="btn btn-sm btn-outline-secondary edit-log" data-id="{{ log.id }}" title="Edit"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg></button>
+                            <button class="btn btn-sm btn-outline-danger delete-log" data-id="{{ log.id }}" data-title="{{ log.task_title | e }}" title="Delete"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="text-muted small">
+                Showing <strong>{{ pagination.items|length }}</strong> of <strong>{{ pagination.total }}</strong> records &mdash; page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong>
+            </span>
+            <div class="pagination-controls">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('work_logs.index', page=pagination.prev_num, search=search, category=category, status=status, date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-secondary">Previous</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('work_logs.index', page=pagination.next_num, search=search, category=category, status=status, date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-secondary">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="empty-state py-4 text-center">
+            <div class="icon">📭</div>
+            <h5>No work logs found</h5>
+            <p class="text-muted">Add your first work log to get started.</p>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#workLogModal">+ Add Work Log</button>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Work log modal (shared) -->
+{% include "work_logs/modal.html" %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/work_logs.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    initWorkLogList();
+    initWorkLogForm();
+});
+</script>
+{% endblock %}

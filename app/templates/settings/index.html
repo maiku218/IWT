@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block content %}
+<h5 class="mb-3">Account Settings</h5>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="m-0">Profile Information</h6></div>
+            <div class="card-body">
+                <form id="profileForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" class="form-control" value="{{ current_user.full_name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input type="text" name="username" class="form-control" value="{{ current_user.username }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ current_user.email }}" required>
+                    </div>
+                    <div id="profileMsg" class="mt-2"></div>
+                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header"><h6 class="m-0">Change Password</h6></div>
+            <div class="card-body">
+                <form id="passwordForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" name="current_password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="new_password" class="form-control" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="form-control" required minlength="6">
+                    </div>
+                    <div id="passwordMsg" class="mt-2"></div>
+                    <button type="submit" class="btn btn-primary btn-sm">Change Password</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-body">
+        <h6 class="m-0">Account Details</h6>
+        <ul class="list-group list-group-flush mt-2">
+            <li class="list-group-item"><strong>Role:</strong> {{ current_user.role }}</li>
+            <li class="list-group-item"><strong>Member since:</strong> {{ current_user.created_at.strftime('%B %d, %Y') if current_user.created_at else 'N/A' }}</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('profileForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch('/settings/', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(async r => {
+                const box = document.getElementById('profileMsg');
+                const res = await r.json().catch(() => ({}));
+                box.innerHTML = res.error ? '<div class="alert alert-danger">' + res.error + '</div>' : '<div class="alert alert-success">Profile updated.</div>';
+                if (r.ok) setTimeout(() => location.reload(), 800);
+            });
+    });
+    document.getElementById('passwordForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const fd = new FormData(this);
+        fetch('/settings/change-password', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(async r => {
+                const box = document.getElementById('passwordMsg');
+                const res = await r.json().catch(() => ({}));
+                box.innerHTML = res.error ? '<div class="alert alert-danger">' + res.error + '</div>' : '<div class="alert alert-success">Password changed.</div>';
+                if (r.ok) this.reset();
+            });
+    });
+});
+</script>
+{% endblock %}
