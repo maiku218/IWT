@@ -23,6 +23,15 @@
     </div>
 </div>
 
+<!-- Live Clock -->
+<div class="card mb-3">
+    <div class="card-body p-3 text-center">
+        <h6 class="m-0 text-muted small">Philippine Time (Asia/Manila)</h6>
+        <div id="liveClock" class="display-5 fw-bold mt-1">--:--:--</div>
+        <div id="liveDate" class="text-muted">-- --, ----</div>
+    </div>
+</div>
+
 <div class="card calendar-card">
     <div class="card-header d-flex align-items-center justify-content-between">
         <h5 class="card-title m-0">Monthly Calendar</h5>
@@ -124,6 +133,22 @@ document.addEventListener('DOMContentLoaded', function () {
     initCalendar();
     initWorkLogForm();
     loadStats();
+    updateClock();
+    setInterval(updateClock, 1000);
 });
+
+function updateClock() {
+    fetch('/attendance/api/status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('liveClock').textContent = data.current_time_manila;
+            document.getElementById('liveDate').textContent = data.current_date_manila;
+        })
+        .catch(() => {
+            const now = new Date();
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-PH', { hour12: false });
+            document.getElementById('liveDate').textContent = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        });
+}
 </script>
 {% endblock %}

@@ -36,7 +36,7 @@ def create_app(config_name=None):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
-    from app.routes import auth, dashboard, work_logs, reports, admin, settings
+    from app.routes import auth, dashboard, work_logs, reports, admin, settings, attendance
 
     app.register_blueprint(auth)
     app.register_blueprint(dashboard)
@@ -44,6 +44,7 @@ def create_app(config_name=None):
     app.register_blueprint(reports)
     app.register_blueprint(admin)
     app.register_blueprint(settings)
+    app.register_blueprint(attendance)
 
     @app.errorhandler(403)
     def forbidden(e):

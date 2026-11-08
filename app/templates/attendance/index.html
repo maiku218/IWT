@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Duty Attendance{% endblock %}
+{% block page_title %}Duty Attendance{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+    <div class="col-md-6 col-sm-12">
+        <div class="stat-card">
+            <div class="stat-label">Duty Status</div>
+            <div class="stat-value" id="dutyStatus" class="status-badge">OFF DUTY</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-12">
+        <div class="stat-card">
+            <div class="stat-label">Completed Hours</div>
+            <div class="stat-value" id="completedHours">0.00</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-12">
+        <div class="stat-card">
+            <div class="stat-label">Required Hours</div>
+            <div class="stat-value" id="requiredHours">{{ required_hours }}</div>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-12">
+        <div class="stat-card">
+            <div class="stat-label">Progress</div>
+            <div class="stat-value" id="progressPercent">0%</div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Clock Card -->
+<div class="card mb-3">
+    <div class="card-body p-3 text-center">
+        <h6 class="m-0 text-muted small">Philippine Time (Asia/Manila)</h6>
+        <div id="liveClock" class="display-4 fw-bold mt-1">--:--:--</div>
+        <div id="liveDate" class="text-muted">-- --, ----</div>
+    </div>
+</div>
+
+<!-- Attendance Controls -->
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0">Attendance Controls</h6>
+    </div>
+    <div class="card-body p-3">
+        <div class="d-flex gap-2 justify-content-center">
+            <button id="btnTimeIn" class="btn btn-primary btn-lg px-4" onclick="timeIn()">TIME IN</button>
+            <button id="btnTimeOut" class="btn btn-danger btn-lg px-4 disabled" onclick="timeOut()" disabled>TIME OUT</button>
+        </div>
+        <div id="activeSession" class="mt-3" style="display:none;">
+            <div class="d-flex justify-content-between align-items-center p-2 bg-gray-50 rounded">
+                <div>
+                    <div class="small text-muted">Time In</div>
+                    <div class="fw-bold" id="sessionTimeIn"></div>
+                </div>
+                <div>
+                    <div class="small text-muted">Elapsed</div>
+                    <div class="fw-bold" id="sessionElapsed">0:00:00</div>
+                </div>
+                <div>
+                    <div class="small text-muted">Status</div>
+                    <span class="badge bg-soft-blue text-dark">ON DUTY</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Internship Progress -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0">Internship Progress</h6>
+    </div>
+    <div class="card-body p-3">
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Completed</span>
+            <span id="progressCompleted">0.00</span> hours
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Required</span>
+            <span id="progressRequired">{{ required_hours }}</span> hours
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted small">Remaining</span>
+            <span id="progressRemaining">{{ required_hours }}</span> hours
+        </div>
+        <div class="progress" style="height: 10px;">
+            <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+        </div>
+        <div class="text-center mt-2">
+            <span id="progressText" class="fw-bold">0.00%</span>
+        </div>
+        <div id="completedMessage" class="text-center mt-2" style="display:none;">
+            <div class="badge bg-soft-green text-dark">INTERNSHIP HOURS COMPLETED!</div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const API_STATUS = '/attendance/api/status';
+const API_ACTIVE = '/attendance/api/active-session';
+const API_TIME_IN = '/attendance/time-in';
+const API_TIME_OUT = '/attendance/time-out';
+
+let timerInterval = null;
+
+function formatElapsed(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+}
+
+function updateClock() {
+    const now = new Date();
+    // Use server time via API status instead of local clock
+    fetch(API_STATUS)
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('liveClock').textContent = data.current_time_manila;
+            document.getElementById('liveDate').textContent = data.current_date_manila;
+        })
+        .catch(() => {
+            // Fallback to local time
+            document.getElementById('liveClock').textContent = now.toLocaleTimeString('en-PH', { hour12: false });
+            document.getElementById('liveDate').textContent = now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        });
+}
+
+function updateStatus(data) {
+    const onDuty = data.is_on_duty;
+    const btnIn = document.getElementById('btnTimeIn');
+    const btnOut = document.getElementById('btnTimeOut');
+    const statusEl = document.getElementById('dutyStatus');
+    const activeSession = document.getElementById('activeSession');
+
+    if (onDuty) {
+        btnIn.disabled = true;
+        btnIn.classList.add('disabled');
+        btnOut.disabled = false;
+        btnOut.classList.remove('disabled');
+        statusEl.textContent = 'ON DUTY';
+        statusEl.className = 'stat-value status-badge bg-soft-green text-dark';
+        activeSession.style.display = 'block';
+        document.getElementById('sessionTimeIn').textContent = data.active_session ? data.active_session.time_in_manila : '';
+        startTimer(data.active_session ? new Date(data.active_session.time_in).getTime() : Date.now());
+    } else {
+        btnIn.disabled = false;
+        btnIn.classList.remove('disabled');
+        btnOut.disabled = true;
+        btnOut.classList.add('disabled');
+        statusEl.textContent = 'OFF DUTY';
+        statusEl.className = 'stat-value status-badge';
+        activeSession.style.display = 'none';
+        stopTimer();
+    }
+
+    document.getElementById('completedHours').textContent = data.completed_hours.toFixed(2);
+    document.getElementById('requiredHours').textContent = data.required_hours;
+    document.getElementById('progressPercent').textContent = data.progress_percentage.toFixed(2) + '%';
+    document.getElementById('progressCompleted').textContent = data.completed_hours.toFixed(2);
+    document.getElementById('progressRequired').textContent = data.required_hours;
+    document.getElementById('progressRemaining').textContent = data.remaining_hours.toFixed(2);
+    const pct = Math.min(data.progress_percentage, 100);
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressText').textContent = pct.toFixed(2) + '%';
+    document.getElementById('completedMessage').style.display = pct >= 100 ? 'block' : 'none';
+}
+
+let timerStart = null;
+function startTimer(startTime) {
+    timerStart = new Date(startTime);
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        const now = Date.now();
+        const elapsed = Math.floor((now - timerStart.getTime()) / 1000);
+        document.getElementById('sessionElapsed').textContent = formatElapsed(elapsed);
+    }, 1000);
+}
+function stopTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = null;
+    document.getElementById('sessionElapsed').textContent = '0:00:00';
+}
+
+async function loadStatus() {
+    try {
+        const r = await fetch(API_STATUS);
+        const data = await r.json();
+        updateStatus(data);
+    } catch (e) {
+        console.error('Failed to load status', e);
+    }
+}
+
+async function timeIn() {
+    if (!confirm('Confirm TIME IN?')) return;
+    try {
+        const r = await fetch(API_TIME_IN, { method: 'POST' });
+        const data = await r.json();
+        if (!r.ok) { alert(data.error || 'Failed to time in.'); return; }
+        loadStatus();
+        startActiveTimer();
+    } catch (e) {
+        alert('Error recording time in.');
+    }
+}
+
+async function timeOut() {
+    if (!confirm('Confirm TIME OUT?')) return;
+    try {
+        const r = await fetch(API_TIME_OUT, { method: 'POST' });
+        const data = await r.json();
+        if (!r.ok) { alert(data.error || 'Failed to time out.'); return; }
+        loadStatus();
+        stopTimer();
+    } catch (e) {
+        alert('Error recording time out.');
+    }
+}
+
+async function startActiveTimer() {
+    try {
+        const r = await fetch(API_ACTIVE);
+        const data = await r.json();
+        if (data.active) {
+            startTimer(new Date(data.record.time_in).getTime());
+        }
+    } catch (e) {}
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    updateClock();
+    setInterval(updateClock, 1000);
+    loadStatus();
+});
+</script>
+{% endblock %}

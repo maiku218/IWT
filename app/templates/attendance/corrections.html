@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Correction Requests{% endblock %}
+{% block page_title %}Attendance Correction Requests{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">Correction Requests</h5>
+    <a href="{{ url_for('attendance.index') }}" class="btn btn-outline-secondary btn-sm">Back to Duty Attendance</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-3">
+        <table class="table table-hover align-middle" id="correctionsTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Requested Time In</th>
+                    <th>Requested Time Out</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                </tr>
+            </thead>
+            <tbody id="correctionsBody">
+            </tbody>
+        </table>
+
+        <div id="correctionsPagination" class="d-flex justify-content-between align-items-center mt-2"></div>
+    </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+const API_CORRECTIONS = '/attendance/api/corrections';
+
+let currentPage = 1;
+
+function formatManila(iso) {
+    if (!iso) return '-';
+    const d = new Date(iso);
+    return d.toLocaleString('en-PH', { timeZone: 'Asia/Manila', hour12: false });
+}
+
+function loadCorrections(page = 1) {
+    fetch(`${API_CORRECTIONS}?page=${page}`)
+        .then(r => r.json())
+        .then(data => {
+            const body = document.getElementById('correctionsBody');
+            body.innerHTML = '';
+            if (!data.requests || data.requests.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" class="text-muted text-center py-3">No correction requests found.</td></tr>';
+            } else {
+                data.requests.forEach(r => {
+                    const statusClass = r.request_status === 'approved' ? 'status-completed' : (r.request_status === 'rejected' ? 'status-pending' : 'bg-soft-blue text-dark');
+                    const tr = document.createElement('tr');
+                    tr.innerHTML =
+                        '<td>' + (r.requested_time_in ? new Date(r.requested_time_in).toLocaleDateString('en-PH') : '-') + '</td>' +
+                        '<td>' + formatManila(r.requested_time_in) + '</td>' +
+                        '<td>' + formatManila(r.requested_time_out) + '</td>' +
+                        '<td>' + (r.reason || '-') + '</td>' +
+                        '<td><span class="badge status-badge ' + statusClass + '">' + (r.request_status || '-') + '</span></td>' +
+                        '<td class="text-muted small">' + formatManila(r.created_at) + '</td>';
+                    body.appendChild(tr);
+                });
+            }
+            renderPagination(data.pagination);
+        });
+}
+
+function renderPagination(p) {
+    const container = document.getElementById('correctionsPagination');
+    container.innerHTML = '';
+    if (!p || p.total === 0) return;
+    const info = document.createElement('span');
+    info.className = 'text-muted small';
+    info.textContent = `Page ${p.page} of ${p.pages} (${p.total} requests)`;
+    container.appendChild(info);
+    const controls = document.createElement('div');
+    controls.className = 'pagination-controls';
+    if (p.has_prev) {
+        const b = document.createElement('a');
+        b.href = '#';
+        b.className = 'btn btn-sm btn-outline-secondary';
+        b.textContent = 'Previous';
+        b.onclick = (e) => { e.preventDefault(); loadCorrections(p.prev_num); };
+        controls.appendChild(b);
+    }
+    if (p.has_next) {
+        const b = document.createElement('a');
+        b.href = '#';
+        b.className = 'btn btn-sm btn-outline-secondary';
+        b.textContent = 'Next';
+        b.onclick = (e) => { e.preventDefault(); loadCorrections(p.next_num); };
+        controls.appendChild(b);
+    }
+    container.appendChild(controls);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    loadCorrections(currentPage);
+});
+</script>
+{% endblock %}

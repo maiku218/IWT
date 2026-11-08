@@ -1,0 +1,79 @@
+{% extends "base_admin.html" %}
+{% block title %}Attendance Monitoring{% endblock %}
+{% block page_title %}Attendance Monitoring{% endblock %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+    <h5 class="m-0">Attendance Monitoring</h5>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+</div>
+
+<div class="card">
+    <div class="card-body p-3">
+        <form method="GET" class="row g-2 mb-3 align-items-end filter-form">
+            <div class="col-sm-4 col-md-2">
+                <select name="intern" class="form-select form-select-sm">
+                    <option value="">All Interns</option>
+                    {% for u in interns %}
+                    <option value="{{ u.id }}" {% if intern_id == u.id %}selected{% endif %}>{{ u.full_name }} ({{ u.username }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-sm-4 col-md-2">
+                <input type="date" name="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+            </div>
+            <div class="col-sm-4 col-md-2">
+                <input type="date" name="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+            </div>
+            <div class="col-auto d-grid">
+                <button class="btn btn-primary btn-sm w-100">Filter</button>
+            </div>
+            <a href="{{ url_for('admin.attendance_monitoring') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="monitoringTable">
+                <thead>
+                    <tr>
+                        <th>Intern</th>
+                        <th>Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Total Hours</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rec in records %}
+                <tr>
+                    <td>{{ rec.user.full_name }} <span class="text-muted small d-block">{{ rec.user.username }}</span></td>
+                    <td>{{ rec.time_in.strftime('%b %d, %Y') if rec.time_in else '-' }}</td>
+                    <td>{{ rec.time_in.strftime('%H:%M:%S') if rec.time_in else '-' }}</td>
+                    <td>{{ rec.time_out.strftime('%H:%M:%S') if rec.time_out else '-' }}</td>
+                    <td>{{ '%.2f'|format(rec.duration_hours) if rec.duration_hours else '-' }} h</td>
+                    <td><span class="badge status-badge status-{{ rec.attendance_status }}">{{ rec.attendance_status }}</span></td>
+                </tr>
+                {% endfor %}
+                {% if not records %}
+                <tr><td colspan="6" class="text-muted text-center py-3">No attendance records found.</td></tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if records %}
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <span class="text-muted small">Page <strong>{{ pagination.page }}</strong> of <strong>{{ pagination.pages }}</strong> ({{ pagination.total }} records)</span>
+            <div class="pagination-controls">
+                {% if pagination.has_prev %}
+                <a href="{{ url_for('admin.attendance_monitoring', page=pagination.prev_num, intern=intern_id, date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-secondary">Previous</a>
+                {% endif %}
+                {% if pagination.has_next %}
+                <a href="{{ url_for('admin.attendance_monitoring', page=pagination.next_num, intern=intern_id, date_from=date_from, date_to=date_to) }}" class="btn btn-sm btn-outline-secondary">Next</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}{% endblock %}

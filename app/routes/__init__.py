@@ -4,5 +4,6 @@ from app.routes.work_logs import bp as work_logs
 from app.routes.reports import bp as reports
 from app.routes.admin import bp as admin
 from app.routes.settings import bp as settings
+from app.routes.attendance import bp as attendance
 
-__all__ = ["auth", "dashboard", "work_logs", "reports", "admin", "settings"]
+__all__ = ["auth", "dashboard", "work_logs", "reports", "admin", "settings", "attendance"]

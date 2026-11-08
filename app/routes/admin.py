@@ -13,7 +13,7 @@ from sqlalchemy import func, extract
 from datetime import date, datetime
 
 from app import db
-from app.models import User, WorkLog, AuditLog
+from app.models import User, WorkLog, AuditLog, AttendanceRecord, AttendanceCorrectionRequest, AttendanceAuditLog, InternshipSetting
 from app.routes.helpers import admin_required
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -410,3 +410,190 @@ def reports():
 @admin_required
 def settings():
     return render_template("admin/settings.html")
+
+
+# ------------------------------------------------- Admin Attendance Monitoring
+@bp.route("/attendance-monitoring")
+@login_required
+@admin_required
+def attendance_monitoring():
+    page = request.args.get("page", 1, type=int)
+    intern_id = request.args.get("intern", type=int)
+    date_from = (request.args.get("date_from") or "").strip()
+    date_to = (request.args.get("date_to") or "").strip()
+
+    query = AttendanceRecord.query.join(User, AttendanceRecord.user_id == User.id).filter(User.role == "intern")
+
+    if intern_id:
+        query = query.filter(AttendanceRecord.user_id == intern_id)
+    if date_from:
+        try:
+            query = query.filter(AttendanceRecord.time_in >= datetime.strptime(date_from, "%Y-%m-%d"))
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            query = query.filter(AttendanceRecord.time_in <= datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1))
+        except ValueError:
+            pass
+
+    query = query.order_by(AttendanceRecord.time_in.desc())
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+
+    interns = User.query.filter_by(role="intern").order_by(User.full_name.asc()).all()
+
+    return render_template(
+        "admin/attendance_monitoring.html",
+        records=pagination.items,
+        pagination=pagination,
+        interns=interns,
+        intern_id=intern_id,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+
+# -------------------------------------------------- Admin Intern Duty Hours
+@bp.route("/intern-duty-hours")
+@login_required
+@admin_required
+def intern_duty_hours():
+    interns = User.query.filter_by(role="intern").order_by(User.full_name.asc()).all()
+    required_hours = InternshipSetting.get_required_hours()
+    duty_data = []
+    for u in interns:
+        completed = u.completed_hours
+        progress = round((completed / required_hours * 100), 2) if required_hours else 0.0
+        duty_data.append(
+            {
+                "id": u.id,
+                "full_name": u.full_name,
+                "username": u.username,
+                "completed_hours": completed,
+                "required_hours": required_hours,
+                "remaining_hours": max(required_hours - completed, 0),
+                "progress_percentage": min(progress, 100.0),
+                "account_status": u.account_status,
+            }
+        )
+    return render_template(
+        "admin/intern_duty_hours.html",
+        duty_data=duty_data,
+        required_hours=required_hours,
+    )
+
+
+# ------------------------------------------------- Admin Attendance Corrections
+@bp.route("/attendance-corrections")
+@login_required
+@admin_required
+def attendance_corrections():
+    page = request.args.get("page", 1, type=int)
+    request_status = (request.args.get("status") or "pending").strip()
+
+    query = AttendanceCorrectionRequest.query.join(User, AttendanceCorrectionRequest.user_id == User.id).filter(User.role == "intern")
+
+    if request_status:
+        query = query.filter(AttendanceCorrectionRequest.request_status == request_status)
+
+    query = query.order_by(AttendanceCorrectionRequest.created_at.desc())
+    pagination = query.paginate(page=page, per_page=20, error_out=False)
+
+    return render_template(
+        "admin/attendance_corrections.html",
+        requests=pagination.items,
+        pagination=pagination,
+        request_status=request_status,
+    )
+
+
+@bp.route("/attendance-corrections/<int:correction_id>/approve", methods=["POST"])
+@login_required
+@admin_required
+def approve_correction(correction_id):
+    correction = AttendanceCorrectionRequest.query.filter_by(id=correction_id).first_or_404()
+    if correction.request_status != "pending":
+        return jsonify({"error": "Only pending corrections can be approved."}), 400
+
+    reason = (request.form.get("reason") or "").strip()
+    correction.request_status = "approved"
+    correction.reviewed_by = current_user.id
+    correction.reviewed_at = datetime.utcnow()
+    db.session.commit()
+
+    # Apply correction to attendance record if linked
+    if correction.attendance_id:
+        record = AttendanceRecord.query.get(correction.attendance_id)
+        if record:
+            old_values = f"time_in={record.time_in.isoformat() if record.time_in else None}, time_out={record.time_out.isoformat() if record.time_out else None}"
+            if correction.requested_time_in:
+                record.time_in = correction.requested_time_in
+            if correction.requested_time_out:
+                record.time_out = correction.requested_time_out
+                delta = record.time_out - record.time_in
+                record.total_seconds = int(delta.total_seconds())
+                record.attendance_status = "off_duty"
+            record.updated_at = datetime.utcnow()
+            new_values = f"time_in={record.time_in.isoformat() if record.time_in else None}, time_out={record.time_out.isoformat() if record.time_out else None}, total_seconds={record.total_seconds}"
+            _audit(
+                "correct_attendance",
+                target_type="attendance",
+                target_id=record.id,
+                details=f"old={old_values}, new={new_values}, reason={reason or 'Approved correction request'}",
+            )
+
+    db.session.commit()
+    return jsonify({"message": "Correction request approved."})
+
+
+@bp.route("/attendance-corrections/<int:correction_id>/reject", methods=["POST"])
+@login_required
+@admin_required
+def reject_correction(correction_id):
+    correction = AttendanceCorrectionRequest.query.filter_by(id=correction_id).first_or_404()
+    if correction.request_status != "pending":
+        return jsonify({"error": "Only pending corrections can be rejected."}), 400
+
+    reason = (request.form.get("reason") or "").strip()
+    correction.request_status = "rejected"
+    correction.reviewed_by = current_user.id
+    correction.reviewed_at = datetime.utcnow()
+    db.session.commit()
+    _audit(
+        "reject_correction",
+        target_type="attendance",
+        target_id=correction.attendance_id,
+        details=f"reason={reason or 'No reason provided'}",
+    )
+    db.session.commit()
+    return jsonify({"message": "Correction request rejected."})
+
+
+# ------------------------------------------------------- Admin Required Hours
+@bp.route("/settings/required-hours", methods=["GET", "POST"])
+@login_required
+@admin_required
+def required_hours():
+    if request.method == "POST":
+        hours = request.form.get("required_hours", type=int)
+        if not hours or hours < 1:
+            return jsonify({"error": "Invalid required hours."}), 400
+        setting = InternshipSetting.query.first()
+        if not setting:
+            setting = InternshipSetting(required_hours=hours)
+            db.session.add(setting)
+        else:
+            old = setting.required_hours
+            setting.required_hours = hours
+            _audit(
+                "change_required_hours",
+                target_type="setting",
+                target_id=setting.id,
+                details=f"Changed required internship hours from {old} to {hours}",
+            )
+        db.session.commit()
+        return jsonify({"message": f"Required internship hours set to {hours}."})
+
+    setting = InternshipSetting.query.first()
+    hours = setting.required_hours if setting else 487
+    return jsonify({"required_hours": hours})
