@@ -199,7 +199,11 @@ async function loadStatus() {
 async function timeIn() {
     if (!confirm('Confirm TIME IN?')) return;
     try {
-        const r = await fetch(API_TIME_IN, { method: 'POST' });
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const r = await fetch(API_TIME_IN, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        });
         const data = await r.json();
         if (!r.ok) { alert(data.error || 'Failed to time in.'); return; }
         loadStatus();
@@ -212,7 +216,11 @@ async function timeIn() {
 async function timeOut() {
     if (!confirm('Confirm TIME OUT?')) return;
     try {
-        const r = await fetch(API_TIME_OUT, { method: 'POST' });
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const r = await fetch(API_TIME_OUT, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken }
+        });
         const data = await r.json();
         if (!r.ok) { alert(data.error || 'Failed to time out.'); return; }
         loadStatus();
