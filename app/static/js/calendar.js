@@ -82,7 +82,7 @@ function loadRecords(dateStr) {
             }
             const table = document.createElement('table');
             table.className = 'table table-sm align-middle';
-            table.innerHTML = '<thead><tr><th>Task</th><th>Category</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody>';
+            table.innerHTML = '<thead><tr><th>Task</th><th>Category</th><th>Status</th><th>Time</th><th>Actions</th></tr></thead><tbody></tbody>';
             const tbody = table.querySelector('tbody');
             data.records.forEach(rec => {
                 const tr = document.createElement('tr');
@@ -90,6 +90,7 @@ function loadRecords(dateStr) {
                     '<td>' + escapeHtml(rec.task_title) + '</td>' +
                     '<td><span class="badge category-badge">' + escapeHtml(rec.category) + '</span></td>' +
                     '<td><span class="badge status-badge status-' + (rec.status || '').toLowerCase() + '">' + escapeHtml(rec.status) + '</span></td>' +
+                    '<td>' + escapeHtml(rec.time_spent) + '</td>' +
                     '<td><div class="d-flex gap-1">' +
                     '<button class="btn btn-sm btn-outline-secondary view-log" data-id="' + rec.id + '">View</button>' +
                     '<button class="btn btn-sm btn-outline-primary edit-log" data-id="' + rec.id + '">Edit</button>' +

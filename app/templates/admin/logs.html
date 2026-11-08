@@ -55,16 +55,18 @@
                     <th>Task Title</th>
                     <th>Category</th>
                     <th>Status</th>
+                    <th>Time Spent</th>
                 </tr>
             </thead>
             <tbody>
             {% for log in logs %}
             <tr>
                 <td>{{ log.owner.full_name }} <span class="text-muted small d-block">{{ log.owner.username }}</span></td>
-                    <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
-                    <td>{{ log.task_title }}</td>
-                    <td><span class="badge category-badge">{{ log.category }}</span></td>
-                    <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                <td>{{ log.work_date.strftime('%b %d, %Y') }}</td>
+                <td>{{ log.task_title }}</td>
+                <td><span class="badge category-badge">{{ log.category }}</span></td>
+                <td><span class="badge status-badge status-{{ log.status|lower }}">{{ log.status }}</span></td>
+                <td>{{ log.time_spent }}</td>
             </tr>
             {% endfor %}
             </tbody>
