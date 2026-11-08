@@ -69,7 +69,11 @@ function editLog(id) {
 
 function deleteLog(id) {
     if (!confirm('Delete this work log?')) return;
-    fetch('/work-logs/' + id + '/delete', { method: 'POST' })
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    fetch('/work-logs/' + id + '/delete', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken }
+    })
         .then(r => r.json())
         .then(() => {
             if (window.calendarInstance) window.calendarInstance.refetchEvents();
