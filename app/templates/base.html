@@ -52,7 +52,9 @@
         <ul class="sidebar-nav">
             {% set ep = request.endpoint or '' %}
             <li><a class="nav-item {% if ep == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}"><span class="icon">📅</span> <span class="text">Dashboard</span></a></li>
+            {% if current_user.role == 'intern' %}
             <li><a class="nav-item {% if ep.startswith('attendance') %}active{% endif %}" href="{{ url_for('attendance.index') }}"><span class="icon">🕒</span> <span class="text">Duty Attendance</span></a></li>
+            {% endif %}
             <li><a class="nav-item {% if ep.startswith('work_logs') %}active{% endif %}" href="{{ url_for('work_logs.index') }}"><span class="icon">📝</span> <span class="text">My Work Logs</span></a></li>
             <li><a class="nav-item {% if ep.startswith('reports') %}active{% endif %}" href="{{ url_for('reports.index') }}"><span class="icon">📊</span> <span class="text">Reports</span></a></li>
             <li><a class="nav-item {% if ep.startswith('settings') %}active{% endif %}" href="{{ url_for('settings.index') }}"><span class="icon">⚙</span> <span class="text">Settings</span></a></li>
