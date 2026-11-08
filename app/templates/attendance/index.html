@@ -97,6 +97,31 @@
     </div>
 </div>
 
+<!-- Duty History -->
+<div class="card mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="m-0">Duty History</h6>
+        <a href="{{ url_for('attendance.history') }}" class="btn btn-sm btn-outline-secondary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="dutyHistoryTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Hours</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="dutyHistoryBody">
+                    <tr><td colspan="5" class="text-muted text-center py-3">Loading history...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block scripts %}
 <script>
@@ -196,6 +221,34 @@ async function loadStatus() {
     }
 }
 
+async function loadDutyHistory() {
+    try {
+        const r = await fetch('/attendance/api/history?page=1');
+        const data = await r.json();
+        const body = document.getElementById('dutyHistoryBody');
+        body.innerHTML = '';
+        if (!data.records || data.records.length === 0) {
+            body.innerHTML = '<tr><td colspan="5" class="text-muted text-center py-3">No duty history found.</td></tr>';
+        } else {
+            data.records.forEach(rec => {
+                const statusClass = rec.attendance_status === 'on_duty' ? 'bg-soft-blue text-dark' : 'bg-soft-gray text-dark';
+                const hours = rec.duration_hours ? rec.duration_hours.toFixed(2) : '-';
+                const tr = document.createElement('tr');
+                tr.innerHTML =
+                    '<td>' + (rec.date || '-') + '</td>' +
+                    '<td>' + (rec.time_in_manila ? rec.time_in_manila : '-') + '</td>' +
+                    '<td>' + (rec.time_out_manila ? rec.time_out_manila : '-') + '</td>' +
+                    '<td>' + hours + ' h</td>' +
+                    '<td><span class="badge status-badge ' + statusClass + '">' + (rec.attendance_status || '-') + '</span></td>';
+                body.appendChild(tr);
+            });
+        }
+    } catch (e) {
+        console.error('Failed to load duty history', e);
+        document.getElementById('dutyHistoryBody').innerHTML = '<tr><td colspan="5" class="text-muted text-center py-3">Failed to load history.</td></tr>';
+    }
+}
+
 async function timeIn() {
     if (!confirm('Confirm TIME IN?')) return;
     try {
@@ -244,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
     updateClock();
     setInterval(updateClock, 1000);
     loadStatus();
+    loadDutyHistory();
 });
 </script>
 {% endblock %}
