@@ -1,0 +1,202 @@
+INTERN TRACKER - SYSTEM BUG & ERROR REPORT
+============================================
+Project: Intern Tracker - Duty Attendance & 487-Hour Tracker
+Generated: 2026-11-08
+Status: Pre-deployment code review + local test findings
+
+============================================
+1. CRITICAL BUGS (Must Fix Before Deploy)
+============================================
+
+BUG-001: Missing psycopg driver on Render
+- File: requirements.txt
+- Error: ModuleNotFoundError: No module named 'psycopg'
+- Cause: SQLAlchemy 2.x requires psycopg v3 driver, but only psycopg2-binary was listed
+- Fix: Added psycopg==3.2.3 to requirements.txt (commit 66d4c38)
+- Status: FIXED
+
+BUG-002: Wrong gunicorn start command on Render
+- Error: AttributeError: module 'app' has no attribute 'app'
+- Cause: Start command was `gunicorn app:app` but entry point is run.py
+- Fix: Changed to `gunicorn run:app` in Render dashboard
+- Status: FIXED (dashboard setting)
+
+BUG-003: No database migration on Render deploy
+- Error: Tables missing on first deploy, causing 500 errors
+- Cause: flask db upgrade not run automatically
+- Fix: Added auto-migration + admin seeding in run.py (commit 2ec409c)
+- Status: FIXED
+
+============================================
+2. HIGH PRIORITY BUGS
+============================================
+
+BUG-004: CSRF token not sent on work log delete
+- File: app/static/js/work_logs.js
+- Error: Delete button returns 403 Forbidden (Flask-WTF CSRF protection)
+- Cause: fetch() DELETE/POST request missing X-CSRFToken header
+- Fix: Added meta csrf-token header to deleteLog() function (commit 00ac485)
+- Status: FIXED
+
+BUG-005: Calendar events API date format crash
+- File: app/routes/dashboard.py
+- Error: ValueError: unconverted data remains: T00:00:00+08:00
+- Cause: FullCalendar sends ISO datetime strings, code tried strptime("%Y-%m-%d")
+- Fix: Split date string on "T" before parsing (commit f71b458)
+- Status: FIXED
+
+BUG-006: Work log time fields removed but code still references them
+- File: app/models.py, work_logs.py, templates
+- Error: AttributeError if start_time/end_time accessed after removal
+- Cause: Migration removed columns but some templates/JS still reference time_spent
+- Fix: Removed all time_spent references from templates and JS (commit 6872511 reverted, then 4227f47)
+- Status: FIXED
+
+============================================
+3. MEDIUM PRIORITY BUGS
+============================================
+
+BUG-007: Timezone mismatch on Windows (naive vs aware datetime)
+- File: app/routes/attendance.py, app/models.py
+- Error: TypeError: can't compare offset-naive and offset-aware datetimes
+- Cause: PostgreSQL stores naive timestamps, Python uses timezone-aware UTC
+- Fix: Changed to datetime.utcnow() (naive UTC) consistently; added .replace(tzinfo=timezone.utc) for Manila conversion
+- Status: FIXED
+
+BUG-008: Attendance status property called as method
+- File: app/models.py, app/routes/attendance.py
+- Error: TypeError: 'property' object is not callable
+- Cause: attendance_progress and completed_hours are properties but called with ()
+- Fix: Removed () calls
+- Status: FIXED
+
+BUG-009: jsonify with status code as second argument produces wrong output
+- File: app/routes/attendance.py
+- Error: Returns JSON array instead of error object with 400 status
+- Cause: jsonify({"error": "..."}, 400) creates array [{"error": "..."}, 400]
+- Fix: Changed to jsonify({"error": "..."}), 400
+- Status: FIXED
+
+BUG-010: filter_by after join causes ambiguous column error
+- File: app/routes/admin.py
+- Error: sqlalchemy.exc.AmbiguousForeignKeysError or InvalidRequestError
+- Cause: filter_by(request_status=...) after join doesn't know which table
+- Fix: Changed to filter(AttendanceCorrectionRequest.request_status == ...)
+- Status: FIXED
+
+BUG-011: _audit() called with wrong arguments
+- File: app/routes/admin.py
+- Error: TypeError: _audit() got unexpected keyword argument
+- Cause: _audit signature doesn't match calls (attendance_id, admin_id, etc.)
+- Fix: Changed to _audit(action, target_type, target_id, details) format
+- Status: FIXED
+
+============================================
+4. LOW PRIORITY / UI ISSUES
+============================================
+
+BUG-012: White text on table cells (work log table)
+- File: app/static/css/style.css
+- Issue: Table text appeared white instead of black
+- Fix: Added color: var(--text) to .table td, .table th
+- Status: FIXED
+
+BUG-013: White text in form-select dropdown
+- File: app/static/css/style.css
+- Issue: Selected option text appeared white
+- Fix: Added color: var(--text) to .form-select
+- Status: FIXED
+
+BUG-014: Badge text color (category/status badges)
+- File: app/static/css/style.css
+- Issue: Badge text appeared white
+- Fix: Added color: var(--text) to .category-badge, .status-badge
+- Status: FIXED
+
+BUG-015: Duty Attendance nav visible to admins
+- File: app/templates/base_admin.html
+- Issue: Admin sidebar showed intern-only attendance links
+- Fix: Removed attendance links from admin sidebar (kept only for interns in base.html)
+- Status: FIXED
+
+BUG-016: Total Hours stat removed from reports but template still references it
+- File: app/templates/reports/index.html, app/routes/reports.py
+- Issue: total_hours variable removed from render_template but template still uses it
+- Fix: Removed Total Hours stat card from reports/index.html
+- Status: FIXED
+
+============================================
+5. TEST RESULTS (Local Testing)
+============================================
+
+TEST SUITE: test_attendance.py (17 test cases)
+Result: ALL PASSED
+
+Test cases:
+1. Register intern john - PASS
+2. Admin approves john - PASS
+3. Intern logs in after approval - PASS
+4. Time IN - PASS
+5. Duplicate TIME IN prevented (400) - PASS
+6. Get status API - PASS
+7. Active session API - PASS
+8. Time OUT - PASS
+9. TIME OUT without session prevented (400) - PASS
+10. Attendance history page - PASS
+11. History API - PASS
+12. Correction request submitted - PASS
+13. Admin approves correction - PASS
+14. Admin duty hours page - PASS
+15. Admin attendance monitoring page - PASS
+16. Admin rejects correction - PASS
+17. Intern blocked from admin routes (403) - PASS
+
+TEST SUITE: test_admin_edit.py
+Result: PASSED
+- Admin edit attendance record with required reason - PASS
+- Edit without reason returns 400 - PASS
+
+============================================
+6. KNOWN LIMITATIONS (Not Bugs)
+============================================
+
+LIMIT-001: Render free tier spins down after 15 min inactivity
+- First request after sleep takes ~30 seconds
+- Not a bug, expected behavior on free tier
+
+LIMIT-002: No email notification system implemented
+- Correction approvals/rejections don't email interns
+- Feature not yet built
+
+LIMIT-003: No geolocation/geofencing on time punch
+- Time in/out can be done from any location
+- Feature not yet built
+
+LIMIT-004: No biometric/RFID hardware integration
+- Manual time punch only
+- Feature not yet built
+
+LIMIT-005: Overnight shift (midnight crossing) not specially handled
+- Duration calculated as simple time difference
+- May show incorrect hours for night shifts
+
+============================================
+7. FILES MODIFIED DURING BUG FIXING
+============================================
+
+- app/models.py: Fixed timezone handling, removed time_spent property, added skills_acquired
+- app/routes/attendance.py: Fixed jsonify status code, property calls, timezone
+- app/routes/admin.py: Fixed _audit calls, filter_by after join, added edit attendance routes
+- app/routes/dashboard.py: Fixed calendar date parsing
+- app/routes/work_logs.py: Removed time fields, added skills_acquired
+- app/routes/reports.py: Removed time fields from exports, removed total_hours
+- app/static/css/style.css: Fixed text colors for tables, selects, badges
+- app/static/js/work_logs.js: Added CSRF token to delete, removed time references
+- app/static/js/calendar.js: Removed Time column from records table
+- app/templates/*: Removed Time Spent columns, added Skills Acquired fields
+- run.py: Added auto-migration and admin seeding
+- requirements.txt: Added psycopg driver
+
+============================================
+END OF REPORT
+============================================
