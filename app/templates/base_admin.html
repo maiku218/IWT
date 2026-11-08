@@ -10,9 +10,6 @@
         <li><a class="nav-item {% if ep == 'admin.dashboard' %}active{% endif %}" href="{{ url_for('admin.dashboard') }}"><span class="icon">🛡</span> <span class="text">Dashboard</span></a></li>
         <li><a class="nav-item {% if ep == 'admin.approvals' %}active{% endif %}" href="{{ url_for('admin.approvals') }}"><span class="icon">⏳</span> <span class="text">Pending Approvals</span></a></li>
         <li><a class="nav-item {% if ep == 'admin.interns' %}active{% endif %}" href="{{ url_for('admin.interns') }}"><span class="icon">👥</span> <span class="text">Intern Management</span></a></li>
-        <li><a class="nav-item {% if ep == 'admin.attendance_monitoring' %}active{% endif %}" href="{{ url_for('admin.attendance_monitoring') }}"><span class="icon">🕒</span> <span class="text">Attendance Monitoring</span></a></li>
-        <li><a class="nav-item {% if ep == 'admin.intern_duty_hours' %}active{% endif %}" href="{{ url_for('admin.intern_duty_hours') }}"><span class="icon">⏱</span> <span class="text">Intern Duty Hours</span></a></li>
-        <li><a class="nav-item {% if ep == 'admin.attendance_corrections' %}active{% endif %}" href="{{ url_for('admin.attendance_corrections') }}"><span class="icon">✏</span> <span class="text">Attendance Corrections</span></a></li>
         <li><a class="nav-item {% if ep == 'admin.reports' %}active{% endif %}" href="{{ url_for('admin.reports') }}"><span class="icon">📋</span> <span class="text">All Work Logs</span></a></li>
         <li><a class="nav-item {% if ep == 'admin.reports' %}active{% endif %}" href="{{ url_for('admin.reports') }}"><span class="icon">📊</span> <span class="text">Reports</span></a></li>
         <li><a class="nav-item {% if ep == 'admin.settings' %}active{% endif %}" href="{{ url_for('admin.settings') }}"><span class="icon">⚙</span> <span class="text">Settings</span></a></li>
