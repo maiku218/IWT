@@ -10,7 +10,8 @@ from flask import (
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func, extract
-from datetime import date, datetime
+from datetime import date, datetime, timezone
+from zoneinfo import ZoneInfo
 
 from app import db
 from app.models import User, WorkLog, AuditLog, AttendanceRecord, AttendanceCorrectionRequest, AttendanceAuditLog, InternshipSetting
@@ -567,6 +568,84 @@ def reject_correction(correction_id):
     )
     db.session.commit()
     return jsonify({"message": "Correction request rejected."})
+
+
+# ------------------------------------------------- Admin Edit Attendance Record
+@bp.route("/attendance-records/<int:record_id>", methods=["GET"])
+@login_required
+@admin_required
+def get_attendance_record(record_id):
+    record = AttendanceRecord.query.filter_by(id=record_id).first_or_404()
+    manila = ZoneInfo("Asia/Manila")
+    return jsonify({
+        "id": record.id,
+        "user_id": record.user_id,
+        "user_name": record.user.full_name,
+        "user_username": record.user.username,
+        "time_in": record.time_in.isoformat() if record.time_in else None,
+        "time_out": record.time_out.isoformat() if record.time_out else None,
+        "time_in_manila": record.time_in.replace(tzinfo=timezone.utc).astimezone(manila).strftime("%Y-%m-%dT%H:%M") if record.time_in else None,
+        "time_out_manila": record.time_out.replace(tzinfo=timezone.utc).astimezone(manila).strftime("%Y-%m-%dT%H:%M") if record.time_out else None,
+        "attendance_status": record.attendance_status,
+        "duration_hours": record.duration_hours,
+    })
+
+
+@bp.route("/attendance-records/<int:record_id>/edit", methods=["POST"])
+@login_required
+@admin_required
+def edit_attendance_record(record_id):
+    record = AttendanceRecord.query.filter_by(id=record_id).first_or_404()
+    reason = (request.form.get("reason") or "").strip()
+    if not reason:
+        return jsonify({"error": "Reason is required."}), 400
+
+    new_time_in = request.form.get("time_in", "").strip()
+    new_time_out = request.form.get("time_out", "").strip()
+
+    old_values = f"time_in={record.time_in.isoformat() if record.time_in else None}, time_out={record.time_out.isoformat() if record.time_out else None}, status={record.attendance_status}"
+
+    if new_time_in:
+        try:
+            record.time_in = datetime.strptime(new_time_in, "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc).replace(tzinfo=None)
+        except ValueError:
+            return jsonify({"error": "Invalid time in format."}), 400
+
+    if new_time_out:
+        try:
+            record.time_out = datetime.strptime(new_time_out, "%Y-%m-%dT%H:%M").replace(tzinfo=timezone.utc).replace(tzinfo=None)
+        except ValueError:
+            return jsonify({"error": "Invalid time out format."}), 400
+
+    # Recalculate duration and status
+    if record.time_in and record.time_out:
+        delta = record.time_out - record.time_in
+        total_seconds = int(delta.total_seconds())
+        if total_seconds <= 0:
+            return jsonify({"error": "Time out must be after time in."}), 400
+        record.total_seconds = total_seconds
+        record.attendance_status = "off_duty"
+    elif record.time_in and not record.time_out:
+        record.time_out = None
+        record.total_seconds = None
+        record.attendance_status = "on_duty"
+    else:
+        record.time_out = None
+        record.total_seconds = None
+        record.attendance_status = "on_duty"
+
+    record.updated_at = datetime.utcnow()
+    new_values = f"time_in={record.time_in.isoformat() if record.time_in else None}, time_out={record.time_out.isoformat() if record.time_out else None}, status={record.attendance_status}"
+
+    _audit(
+        "edit_attendance",
+        target_type="attendance",
+        target_id=record.id,
+        details=f"old={old_values}, new={new_values}, reason={reason}",
+    )
+    db.session.commit()
+
+    return jsonify({"message": "Attendance record updated successfully."})
 
 
 # ------------------------------------------------------- Admin Required Hours
