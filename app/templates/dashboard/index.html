@@ -23,12 +23,24 @@
     </div>
 </div>
 
-<!-- Live Clock -->
 <div class="card mb-3">
     <div class="card-body p-3 text-center">
         <h6 class="m-0 text-muted small">Philippine Time (Asia/Manila)</h6>
         <div id="liveClock" class="display-5 fw-bold mt-1">--:--:--</div>
         <div id="liveDate" class="text-muted">-- --, ----</div>
+    </div>
+</div>
+
+<!-- Duty Attendance Quick Access -->
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h6 class="m-0">Duty Attendance</h6>
+                <p class="text-muted small mb-0">Time In / Time Out &bull; Track your 487 hours</p>
+            </div>
+            <a href="{{ url_for('attendance.index') }}" class="btn btn-primary">Go to Attendance</a>
+        </div>
     </div>
 </div>
 
