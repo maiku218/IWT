@@ -468,15 +468,15 @@ body {
 
 /* Mobile */
 @media (max-width: 991.98px) {
-    .sidebar {
-        transform: translateX(-100%);
+    .sidebar,
+    #sidebarOverlay,
+    .sidebar-toggle {
+        display: none !important;
     }
-    .sidebar-hidden {
-        transform: translateX(0);
+    .main-content {
+        margin-left: 0;
+        width: 100%;
     }
-    .overlay { display: none; }
-    .overlay.show { display: block; }
-    .main-content { margin-left: 0; }
     .user-name { display: none; }
     .caret-text { display: none; }
     .stat-card .stat-value { font-size: 20px; }
