@@ -439,6 +439,108 @@ body {
     .user-name { display: none; }
     .caret-text { display: none; }
     .stat-card .stat-value { font-size: 20px; }
+
+    /* Responsive tables on mobile */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        min-width: 600px;
+        font-size: 12px;
+    }
+
+    .table td, .table th {
+        white-space: nowrap;
+        padding: 6px 8px;
+    }
+
+    /* Better modal on mobile */
+    .modal-dialog {
+        margin: 10px;
+        max-width: calc(100% - 20px);
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    /* Better form layout on mobile */
+    .row.g-3 > div, .row.g-2 > div {
+        min-width: 100%;
+    }
+
+    /* Better buttons on mobile */
+    .btn {
+        padding: 8px 16px;
+        font-size: 13px;
+    }
+
+    .btn-sm {
+        padding: 4px 10px;
+        font-size: 12px;
+    }
+
+    /* Better calendar on mobile */
+    .fc-toolbar-chunk {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .fc-toolbar-chunk > * {
+        flex: 1 1 auto;
+    }
+
+    .fc-button {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    /* Hide time column on very small screens in calendar records */
+    .records-table .time-col,
+    .records-table th:nth-child(4),
+    .records-table td:nth-child(4) {
+        display: none;
+    }
+
+    /* Attendance buttons full width on mobile */
+    .attendance-btns .btn {
+        flex: 1;
+        min-width: 0;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    /* Progress bar smaller on mobile */
+    .progress {
+        height: 6px;
+    }
+
+    /* Sidebar brand smaller on mobile */
+    .sidebar-brand {
+        height: 48px;
+        padding: 0 14px;
+    }
+
+    .brand-text {
+        font-size: 15px;
+    }
+
+    /* Nav items padding on mobile */
+    .sidebar-nav .nav-item {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .icon {
+        width: 20px;
+        font-size: 16px;
+        margin-right: 10px;
+    }
 }
 
 @media (max-width: 576px) {
@@ -450,4 +552,134 @@ body {
         padding-left: 12px;
         padding-right: 12px;
     }
+
+    .top-header {
+        height: 56px;
+    }
+
+    .page-title {
+        font-size: 16px;
+    }
+
+    .user-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .dropdown-menu {
+        min-width: 180px;
+        font-size: 13px;
+    }
+
+    .dropdown-item {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .stat-card {
+        padding: 12px;
+    }
+
+    .stat-label {
+        font-size: 10px;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 18px;
+    }
+
+    .card-body {
+        padding: 12px;
+    }
+
+    .card-header {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .form-control, .form-select {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .form-label {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .alert {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+
+    /* Pagination on mobile */
+    .pagination-controls {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+    }
+
+    .pagination-controls .btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Attendance status badge */
+    .status-badge {
+        font-size: 10px;
+        padding: 4px 8px;
+    }
+
+    /* Footer/logout styling */
+    .sidebar-nav .nav-item.text-danger {
+        margin-top: auto;
+    }
+}
+
+/* Ensure tables scroll properly on all mobile devices */
+@media (max-width: 768px) {
+    .table-responsive {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        margin-bottom: 1rem;
+    }
+
+    .table-responsive > .table {
+        min-width: 650px;
+    }
+
+    /* Full calendar mobile */
+    .fc-view-harness {
+        overflow-x: auto;
+    }
+
+    .fc-scroller {
+        overflow-x: auto !important;
+    }
+}
+
+/* Touch-friendly buttons */
+@media (hover: none) {
+    .btn {
+        min-height: 44px;
+    }
+
+    .sidebar-nav .nav-item {
+        min-height: 48px;
+    }
+}
+
+/* Smooth transitions */
+.sidebar, .overlay, .main-content {
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Prevent body scroll when sidebar is open on mobile */
+body.sidebar-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
 }
